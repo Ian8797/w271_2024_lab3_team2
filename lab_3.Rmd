@@ -7,9 +7,9 @@ output:
 
 ```{r load packages, echo=FALSE, message=FALSE}
 library(tidyverse)
+library(ggplot2)
+library(patchwork)
 ```
-
-#test 
 
 # U.S. traffic fatalities: 1980-2004
 
@@ -25,11 +25,9 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 load(file="./data/driving.RData")
 
 ## please comment these calls in your work 
-glimpse(data)
+head(data)
 desc
 ```
-
-
 # (30 points, total) Build and Describe the Data 
 
 1. (5 points) Load the data and produce useful features. Specifically: 
@@ -44,6 +42,189 @@ desc
     - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+
+```{r}
+#head(data)
+```
+
+```{r Load the data and produce useful features}
+#speed limit 
+data$speed_limit <- with(data, 
+  ifelse(as.integer(sl55 >= 0.5), 55,
+    ifelse(as.integer(sl65 >= 0.5), 65,
+      ifelse(as.integer(sl70 >= 0.5), 70,
+        ifelse(as.integer(sl75 >= 0.5), 75, 
+          ifelse(as.integer(slnone >= 0.5), NA, NA))))))
+
+#year of observation
+year_vars <- grep("^d\\d{2}$", names(data), value = TRUE)
+data$year_of_observation <- apply(data[, year_vars], 1, function(x) 1980 + which(x == 1) - 1)
+
+data <- data[, !(names(data) %in% c(year_vars, "sl55", "sl65", "sl70", "sl75", "slnone"))]
+
+#make sure they are indicating 0 and 1 respectively 
+data$bac10 <- round(data$bac10)
+data$bac08<- round(data$bac08)
+data$sbprim <- round(data$sbprim)
+data$sbsecon <- round(data$sbsecon)
+
+data$minage <- round(data$minage)
+data$perse <- round(data$perse)
+data$zerotol <- round(data$zerotol)
+data$gdl <- round(data$gdl)
+data$sl70plus <- round(data$sl70plus)
+
+#rename for clarity 
+names(data)[names(data) == "totfatpvm"] <- "total_fatalities_pvm"
+names(data)[names(data) == "nghtfatpvm"] <- "night_fatalities_pvm"
+names(data)[names(data) == "wkndfatpvm"] <- "weekend_fatalities_pvm"
+names(data)[names(data) == "totfatrte"] <- "total_fatalities_rate"
+names(data)[names(data) == "nghtfatrte"] <- "night_fatalities_rate"
+names(data)[names(data) == "wkndfatrte"] <- "weekend_fatalities_rate"
+names(data)[names(data) == "unem"] <- "unemployment_rate"
+
+names(data)[names(data) == "gdl"] <- "graduated_drivers_license_law"
+names(data)[names(data) == "zerotol"] <- "zero_tolerance_law"
+names(data)[names(data) == "totfat"] <- "total_fatalities"
+names(data)[names(data) == "nghtfat"] <- "total_nighttime_fatalities"
+names(data)[names(data) == "wkndfat"] <- "total_weekend_fatalities"
+```
+
+```{r, rename states}
+data$state[data$state == 1] <- 'al'
+data$state[data$state == 3] <- 'az'
+data$state[data$state == 4] <- 'ar'
+data$state[data$state == 5] <- 'ca'
+data$state[data$state == 6] <- 'co'
+data$state[data$state == 7] <- 'ct'
+data$state[data$state == 8] <- 'de'
+data$state[data$state == 10] <- 'fl'
+data$state[data$state == 11] <- 'ga'
+data$state[data$state == 13] <- 'id'
+data$state[data$state == 14] <- 'il'
+data$state[data$state == 15] <- 'in'
+data$state[data$state == 16] <- 'ia'
+data$state[data$state == 17] <- 'ks'
+data$state[data$state == 18] <- 'ky'
+
+data$state[data$state == 19] <- 'la'
+data$state[data$state == 20] <- 'me'
+data$state[data$state == 21] <- 'md'
+data$state[data$state == 22] <- 'ma'
+data$state[data$state == 23] <- 'mi'
+data$state[data$state == 24] <- 'mn'
+data$state[data$state == 25] <- 'ms'
+data$state[data$state == 26] <- 'mo'
+data$state[data$state == 27] <- 'mt'
+data$state[data$state == 28] <- 'ne'
+data$state[data$state == 29] <- 'nv'
+data$state[data$state == 30] <- 'nh'
+data$state[data$state == 31] <- 'nj'
+
+
+data$state[data$state == 32] <- 'nm'
+data$state[data$state == 33] <- 'ny'
+data$state[data$state == 34] <- 'nc'
+data$state[data$state == 35] <- 'nd'
+data$state[data$state == 36] <- 'oh'
+data$state[data$state == 37] <- 'ok'
+data$state[data$state == 38] <- 'or'
+data$state[data$state == 39] <- 'pa'
+data$state[data$state == 40] <- 'ri'
+data$state[data$state == 41] <- 'sc'
+
+
+data$state[data$state == 42] <- 'sd'
+data$state[data$state == 43] <- 'tn'
+data$state[data$state == 44] <- 'tx'
+data$state[data$state == 45] <- 'ut'
+data$state[data$state == 46] <- 'vt'
+data$state[data$state == 47] <- 'va'
+data$state[data$state == 48] <- 'wa'
+data$state[data$state == 49] <- 'wv'
+data$state[data$state == 50] <- 'wi'
+data$state[data$state == 51] <- 'wy'
+
+
+
+```
+
+
+The traffic fatalities data originates from the Fatality Analysis Reporting System (FARS), managed by the National Highway Traffic Safety Administration (NHTSA). This system gathers data on every traffic crash across the 48 contiguous United States that results in the death of a vehicle occupant or a nonmotorist. The data collection process, conducted by state employees, employs a standardized format to ensure consistency and comparability across different states.
+
+The dependent variable of interest, total_fatalities_rate, is defined as the number of traffic fatalities per 100,000 population at the state level over over the years 1980-2004. The dataset consists of approximately 1200 records, reflecting 48 records for each of the 25 years covered.
+
+The independent variables include indicator variables for control legislation, including blood alcohol limit, graduated drivers license law, seat belt, and speed limit laws. Other controls include continuous variables for mileage traveled and demographic characteristics.
+
+This dataset represents a census of traffic fatalities, rather than a sample. It documents every recorded instance of traffic-related fatalities within its scope and time frame, making it a complete record for the study period and not a subset of the total incidents. 
+
+
+```{r}
+average_fatalities_per_year <- aggregate(total_fatalities_rate ~ year_of_observation, data, mean)
+
+ggplot(average_fatalities_per_year, aes(x = year_of_observation, y = total_fatalities_rate)) +
+    geom_line() +
+    labs(title = "Average Total Fatalities Rate per Year",
+         x = "Year",
+         y = "Average Total Fatalities Rate") +
+    theme_minimal()
+```
+The graph shows a significant downward trend in the average total fatalities rate per year from 1980 to 2004. From the early 1990s onwards, the rate shows some fluctuations but generally remains at a lower rate than at the start of the period observed. This suggests that road safety may have improved, possibly due to policy changes, improved vehicle safety, or other factors.
+
+```{r}
+average_by_age <- aggregate(total_fatalities_rate ~ minage, data = data, FUN = mean)
+#print(average_by_age)
+```
+
+Table 1: Average Total Fatalities by Minimum Drinking Age 
+
+| Minimum Drinking Age          | 18    | 19    | 20    | 21    | 
+|:-----------------------------:|------:|------:|------:|-------:
+| Average Total Fatalities Rate | 23.96 | 21.33 | 19.76 | 18.20 |
+
+This table suggests that as the minimum legal drinking age increases, the average total fatalities rate decreases. This trend may imply that higher drinking age laws could be contributing to improved road safety, possibly by reducing alcohol consumption among younger drivers. 
+
+```{r,fig.width = 10,fig.height=4, warning=FALSE}
+
+p1_bar <- ggplot(data, aes(x=factor(seatbelt), y=total_fatalities_rate, fill=factor(seatbelt))) +
+  geom_bar(stat="summary", fun=mean) +
+  labs(title="Average Total Fatalities by Seat Belt Law",x="Seatbelt Law", y="Average Total Fatalities Rate", fill="Seatbelt Law") + 
+  theme_minimal() +
+  scale_fill_brewer(palette="Set1", labels=c("No Law", "Primary Law", "Secondary Law")) +
+  scale_x_discrete(labels=c("No Law", "Primary Law", "Secondary Law")) 
+
+
+p2_bar <- ggplot(data, aes(x=factor(sl70plus), y=total_fatalities_rate, fill=factor(sl70plus))) +
+  geom_bar(stat="summary", fun=mean) +
+  labs(title="Average Total Fatalities by Speed Limit", x="Speed Limit (MPH)", y="Average Total Fatalities Rate", fill="Speed Limit") +
+  theme_minimal() +
+  scale_fill_brewer(palette="Set2",labels=c("0"="Less than 70 MPH", "1"="Over 70 MPH")) +
+  scale_x_discrete(labels=c("0"="Less than 70 MPH", "1"="Over 70 MPH")) +
+  scale_fill_discrete(labels=c("0"="Less than 70 MPH", "1"="Over 70 MPH"))
+p1_bar | p2_bar
+```
+
+The seat belt law graph shows that regions with no seatbelt law (0) have the highest average fatality rate, while those with a primary enforcement law (1) show a lower rate, and secondary enforcement (2) has the lowest. This indicates that stricter seatbelt laws could be associated with reduced fatalities. The speed limit graph shows that when the speed limit is over 70 the average total fatalities rate is a bit higher, but interestingly not by much. 
+
+```{r, fig.width = 10,fig.height=4}
+p1_box <- ggplot(data, aes(x=factor(graduated_drivers_license_law), y=total_fatalities_rate)) +
+  geom_boxplot() +
+  labs(title="Average Total Fatalities by GDL",
+       x="Graduated Drivers License Law", 
+       y="Average Total Fatalities Rate") +
+  theme_minimal()
+
+p2_box <- ggplot(data, aes(x=factor(zero_tolerance_law), y=total_fatalities_rate)) +
+  geom_boxplot() +
+  labs(title="Average Total Fatalities by Zero Tolerance Law",
+       x="Zero Tolerance Law", 
+       y="Average Total Fatalities Rate") +
+  theme_minimal()
+
+p1_box | p2_box
+```
+
+The box plots comparing average total fatalities rates against the presence of Graduated Drivers License Law and Zero Tolerance Law show a lower median fatality rate when these laws are in place (indicated by '1') as opposed to when they are not (indicated by '0'). 
 
 # (15 points) Preliminary Model
 
