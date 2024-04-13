@@ -9,6 +9,7 @@ output:
 library(tidyverse)
 library(ggplot2)
 library(patchwork)
+library(knitr)
 ```
 
 # U.S. traffic fatalities: 1980-2004
@@ -88,6 +89,9 @@ names(data)[names(data) == "zerotol"] <- "zero_tolerance_law"
 names(data)[names(data) == "totfat"] <- "total_fatalities"
 names(data)[names(data) == "nghtfat"] <- "total_nighttime_fatalities"
 names(data)[names(data) == "wkndfat"] <- "total_weekend_fatalities"
+names(data)[names(data) == "sbprim"] <- "primary_seatbelt_law"
+names(data)[names(data) == "sbsecon"] <- "secondary_seatbelt_law"
+
 ```
 
 ```{r, rename states}
@@ -223,7 +227,6 @@ p2_box <- ggplot(data, aes(x=factor(zero_tolerance_law), y=total_fatalities_rate
 
 p1_box | p2_box
 ```
-
 The box plots comparing average total fatalities rates against the presence of Graduated Drivers License Law and Zero Tolerance Law show a lower median fatality rate when these laws are in place (indicated by '1') as opposed to when they are not (indicated by '0'). 
 
 # (15 points) Preliminary Model
@@ -236,6 +239,24 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
+
+```{r Preliminary Model}
+
+prelim_lm <- lm(total_fatalities_rate ~ year_of_observation + bac10 + bac08, data=data)
+
+summary(prelim_lm)
+
+std_residuals <- rstandard(prelim_lm)
+
+
+```
+Fitting a linear model is a good place to start given its simplicity and comprehension to give first insights into the data. It also may immediately signal if ignoring cross sectional units has detrimentally effected the model. Here the model explains that year has a negative relationship with total fatality rate. Additionally, that establishing legality levels of BAC have negative effects on fatality rates as well. 
+
+Driving did become safer over time as the trend in years clearly shows, but the BAC legality had a strong influence as well. At the beginning of the time period many states had no BAC limit, but as regulations changed thresholds were established. The model indicates these thresholds helped in the decrease in fatality rates.
+
+The limitations of this model are that the different policy journeys of each state are mixed together in a potentially problematic way that fails to respect the true timing of state decisions to adjust policy and make driving safer. 
+
+Additionally states could have started at very distinct levels of driving fatality rates that are obscured when data is pooled together. This is a leading reason that parameter estimates are not reliable and unbiased. The omitted variable of state not being considered leads to this. The influence of heteroscedasticity also gives evidence that the uncertainty estimates are not reliable and biased due to the data structure problems previously mentioned.
 
 # (15 points) Expanded Model 
 
@@ -256,6 +277,18 @@ If it is appropriate, include transformations of these variables. Please careful
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 - Do *per se laws* have a negative effect on the fatality rate? 
 - Does having a primary seat belt law? 
+
+```{r Expanded Model}
+expand_lm <- lm(total_fatalities_rate ~ year_of_observation + graduated_drivers_license_law + bac10 + bac08 + primary_seatbelt_law + secondary_seatbelt_law + perse + unemployment_rate + perc14_24 + sl70plus + vehicmiles, data=data)
+
+summary(expand_lm)
+```
+
+Primary seat belt laws and Secondary seat belt laws are rounded to represent a Boolean flag and from our chart above should be considered separately due to the different levels of fatality rates. Graduated driver license and Per se laws were simlarly rounded to eliminate any data that may have not been a Boolean. Speed limit faster than 70 mph was kept as the original Boolean due to the EDA indicating a slight difference in the fatality rates associated. Unemployment Rate, Vehicle miles driven per capita, Percent of the population between 14 and 24 years old are also unaltered due to them being continuous variables. 
+
+For Blood Alcohol levels the BAC 10% and BAC 8% law columns are considered separately to help us evaluate the relative impact in the model. The coefficient values are nearly identical at roughly -1.3. Meaning that the presence of a BAC law lowers fatalities by -1.2 per 100,000 people. Per Se laws have a slightly positive effect on fatalities however the coefficient is not significant and will be removed from the model. Having a primary seatbelt law has a significant and postive impact on fatalities showing the clearest evidence that a pooled linear model is not the appropriate approach to model the trends of the this panel data.
+
+
 
 # (15 points) State-Level Fixed Effects 
 
