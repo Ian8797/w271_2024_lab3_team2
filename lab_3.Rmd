@@ -5,10 +5,35 @@ output: 'pdf_document'
 ---
 
 ```{r load packages, echo=FALSE, message=FALSE}
-library(tidyverse)
-library(ggplot2)
-library(patchwork)
-library(knitr)
+if(!"plm"%in%rownames(installed.packages())) {install.packages("plm")} 
+library(plm) 
+if(!"plyr"%in%rownames(installed.packages())) {install.packages("plyr")} 
+library(plyr) 
+if(!"dplyr"%in%rownames(installed.packages())) {install.packages("dplyr")} 
+library (dplyr) 
+if(!"ggplot2"%in%rownames(installed.packages())) {install.packages("ggplot2")} 
+library(ggplot2) 
+if(!"ggthemes"%in%rownames(installed.packages())) {install.packages("ggthemes")} 
+library(ggthemes) 
+if(!"scales"%in%rownames(installed.packages())) {install.packages("scales")} 
+library (scales) 
+if(!"reshape2"%in%rownames(installed.packages())) {install.packages("reshape2")} 
+library(reshape2) 
+if(!"gridExtra"%in%rownames(installed.packages())) {install.packages("gridExtra")} 
+library(gridExtra) 
+if(!"lubridate"%in%rownames(installed.packages())) {install.packages("lubridate")} 
+library (lubridate) 
+if(!"stargazer "%in%rownames(installed.packages())) {install.packages("stargazer")} 
+library(stargazer) 
+if(!"mgcv"%in%rownames(installed.packages())) {install.packages("mgcv")} 
+library(mgcv) 
+if(!"knitr"%in%rownames(installed.packages())) {install.packages("knitr")} 
+library(knitr) 
+if(!"tidyverse"%in%rownames(installed.packages())) {install.packages("tidyverse")} 
+library(tidyverse) 
+if(!"patchwork"%in%rownames(installed.packages())) {install.packages("patchwork")} 
+library(patchwork) 
+
 ```
 
 # U.S. traffic fatalities: 1980-2004
@@ -227,6 +252,35 @@ p2_box <- ggplot(data, aes(x=factor(zero_tolerance_law), y=total_fatalities_rate
 p1_box | p2_box
 ```
 The box plots comparing average total fatalities rates against the presence of Graduated Drivers License Law and Zero Tolerance Law show a lower median fatality rate when these laws are in place (indicated by '1') as opposed to when they are not (indicated by '0'). 
+```{r,fig.width = 10,fig.height=4, warning=FALSE}
+data |> 
+  ggplot(aes(reorder(state,desc(total_fatalities_rate)), total_fatalities_rate, fill=state))+
+  geom_boxplot(alpha=0.4) +
+  theme_economist_white(gray_bg=F)+
+  theme(legend.position = "none", axis.text.y = element_text(size=6)) + 
+  scale_y_continuous(label=percent)+
+  xlab("State")+
+  ylab("Fatality Rate")+
+  coord_flip()
+```
+We see strong differences in fatality rate across different states over time, suggesting that fixed effects are important for controlling for unobserved differences.
+
+```{r,fig.width = 10,fig.height=4, warning=FALSE}
+data |> 
+  ggplot(aes(year_of_observation, total_fatalities_rate, color = state))+
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm") +
+  facet_wrap(~state) +
+  theme_economist_white(gray_bg=F)+
+  theme(legend.position = "none", axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
+        axis.text.y = element_text(size=8)) + 
+  theme(strip.text = element_text(size=4)) +
+  scale_y_continuous(label=percent)+
+  xlab("State")+
+  ylab("Fatality Rate")
+
+```
+We see that fatality rate appear to have been trending down in most state over time, with some being more flat.
 
 # (15 points) Preliminary Model
 
