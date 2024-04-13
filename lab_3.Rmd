@@ -258,9 +258,9 @@ data |>
   geom_boxplot(alpha=0.4) +
   theme_economist_white(gray_bg=F)+
   theme(legend.position = "none", axis.text.y = element_text(size=6)) + 
-  scale_y_continuous(label=percent)+
+  scale_y_continuous(label=scales::number_format(accuracy = 1))+
   xlab("State")+
-  ylab("Fatality Rate")+
+  ylab("Total fatalities per 100k population")+
   coord_flip()
 ```
 We see strong differences in fatality rate across different states over time, suggesting that fixed effects are important for controlling for unobserved differences.
@@ -275,9 +275,9 @@ data |>
   theme(legend.position = "none", axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
         axis.text.y = element_text(size=8)) + 
   theme(strip.text = element_text(size=4)) +
-  scale_y_continuous(label=percent)+
+  scale_y_continuous(label=scales::number_format(accuracy = 1))+
   xlab("State")+
-  ylab("Fatality Rate")
+  ylab("Total fatalities per 100k population")
 
 ```
 We see that fatality rate appear to have been trending down in most state over time, with some being more flat.
