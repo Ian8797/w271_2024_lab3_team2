@@ -1,8 +1,7 @@
 ---
 title: 'Lab 3: Panel Models'
 subtitle: 'US Traffic Fatalities: 1980 - 2004'
-output: 
-  bookdown::pdf_document2: default
+output: 'pdf_document'
 ---
 
 ```{r load packages, echo=FALSE, message=FALSE}
