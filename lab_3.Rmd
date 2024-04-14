@@ -431,12 +431,10 @@ driving.change.ts |> filter(pct_change == min(pct_change))
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
-
-#To be filled in with FE Coeffs
+Based on FE estimates, one unit change of miles driven per capita will have about 0.01% impact on the number of traffic fatalities. Therefore, about 2% increase in driving during February 2020 will estimate to have 0.0002% increase on the number of traffic fatalities.
 
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
-
-#To be filled in with FE Coeffs
+Based on FE estimates, one unit change of miles driven per capita will have about 0.01% impact on the number of traffic fatalities. Therefore, about 12% decrease in driving during February 2021 will estimate to have 0.0012% decrease on the number of traffic fatalities.
 
 # (5 points) Evaluate Error 
 
