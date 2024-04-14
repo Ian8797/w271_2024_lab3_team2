@@ -365,6 +365,7 @@ fn <- as.formula(paste('total_fatalities_rate ~', paste(combined_vars, collapse=
 fe_mod <- plm(fn, index="state", data=data, model="within")
 summary(fe_mod)
 ```
+
 *Need to add commentary*
 
 
