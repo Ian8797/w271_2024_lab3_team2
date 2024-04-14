@@ -32,8 +32,15 @@ library(knitr)
 if(!"tidyverse"%in%rownames(installed.packages())) {install.packages("tidyverse")} 
 library(tidyverse) 
 if(!"patchwork"%in%rownames(installed.packages())) {install.packages("patchwork")} 
-library(patchwork) 
-
+library(patchwork)
+if(!"fredr"%in%rownames(installed.packages())) {install.packages("fredr")} 
+library(fredr)
+if(!"tsibble"%in%rownames(installed.packages())) {install.packages("tsibble")} 
+library(tsibble)
+if(!"tseries"%in%rownames(installed.packages())) {install.packages("tseries")} 
+library(tseries)
+if(!"feasts"%in%rownames(installed.packages())) {install.packages("feasts")} 
+library(feasts)
 ```
 
 # U.S. traffic fatalities: 1980-2004
@@ -356,6 +363,17 @@ Which set of estimates do you think is more reliable? Why do you think this?
 - What assumptions are needed in each of these models?  
 - Are these assumptions reasonable in the current context?
 
+```{r fixed effects model}
+year_vars_minus_one <- year_vars[2:length(year_vars)]
+expanded_vars <- c("bac10", "bac08", "perse", "primary_seatbelt_law", "secondary_seatbelt_law", "sl70plus", "graduated_drivers_license_law", "perc14_24", "unemployment_rate", "vehicmilespc")
+combined_vars <- c(year_vars_minus_one, expanded_vars)
+
+fn <- as.formula(paste('total_fatalities_rate ~', paste(combined_vars, collapse='+')))
+
+fe_mod <- plm(fn, index="state", data=data, model="within")
+summary(fe_mod)
+```
+
 # (10 points) Consider a Random Effects Model 
 
 Instead of estimating a fixed effects model, should you have estimated a random effects model?
@@ -368,14 +386,55 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
 
+```{r}
+fredr_set_key("0ba6b0a40845d6abcf6b761a190609c7")
+driving.df <- fredr(
+  series_id = "M12MTVUSM227NFWA",
+  observation_start = as.Date("2018-01-01")
+) |>
+  mutate(year = year(date)) |>
+  mutate(month = month(date)) |>
+  mutate(time_index = yearmonth(date)) |>
+  select(c(time_index, year, month, value))
+baseline_2018_driving <- driving.df |> 
+  filter(year == 2018) |> 
+  select(month, value) |>
+  rename(baseline_month = month, baseline_value = value)
+post_2018<-driving.df |> 
+  filter(year != 2018) 
+driving.change.ts <- post_2018 |>
+  left_join(baseline_2018_driving, by = c('month' = 'baseline_month')) |>
+  mutate(change = (value-baseline_value)) |>
+  mutate(pct_change = (value-baseline_value)/baseline_value*100) |>
+  select(time_index, pct_change) |>
+  as_tsibble(index = time_index)
+```
+
+
+```{r}
+driving.change.ts |>
+  gg_subseries(pct_change) +
+  labs(y = "Percentage Change from 2018 Total Driving", x = "Month",
+       title = "US Total Vehicle Miles Traveled/Total Population 2018-2024")
+driving.change.ts |> filter(pct_change == max(pct_change))
+driving.change.ts |> filter(pct_change == min(pct_change))
+```
+
 - Comparing monthly miles driven in 2018 to the same months during the pandemic: 
   - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
+    During the pandemic, February 2021 was the month that had experienced largest decrease in driving when compared to Feb 2018 with -11.95% decrease.
   - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
+    During the pandemic, February 2020 was the month that had experienced largest increase in driving when compared to Feb 2018 with 2.11% increase.
   
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+#To be filled in with FE Coeffs
+
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+#To be filled in with FE Coeffs
 
 # (5 points) Evaluate Error 
 
