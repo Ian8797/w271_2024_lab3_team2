@@ -92,7 +92,8 @@ data$speed_limit <- with(data,
 year_vars <- grep("^d\\d{2}$", names(data), value = TRUE)
 data$year_of_observation <- apply(data[, year_vars], 1, function(x) 1980 + which(x == 1) - 1)
 
-data <- data[, !(names(data) %in% c(year_vars, "sl55", "sl65", "sl70", "sl75", "slnone"))]
+#data <- data[, !(names(data) %in% c(year_vars, "sl55", "sl65", "sl70", "sl75", "slnone"))]
+data <- data[, !(names(data) %in% c("sl55", "sl65", "sl70", "sl75", "slnone"))]
 
 #make sure they are indicating 0 and 1 respectively 
 data$bac10 <- round(data$bac10)
@@ -348,8 +349,6 @@ Primary seat belt laws and Secondary seat belt laws are rounded to represent a B
 
 For Blood Alcohol levels the BAC 10% and BAC 8% law columns are considered separately to help us evaluate the relative impact in the model. The coefficient values are nearly identical at roughly -1.3. Meaning that the presence of a BAC law lowers fatalities by -1.2 per 100,000 people. Per Se laws have a slightly positive effect on fatalities however the coefficient is not significant and will be removed from the model. Having a primary seatbelt law has a significant and postive impact on fatalities showing the clearest evidence that a pooled linear model is not the appropriate approach to model the trends of the this panel data.
 
-
-
 # (15 points) State-Level Fixed Effects 
 
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
@@ -373,6 +372,9 @@ fn <- as.formula(paste('total_fatalities_rate ~', paste(combined_vars, collapse=
 fe_mod <- plm(fn, index="state", data=data, model="within")
 summary(fe_mod)
 ```
+
+*Need to add commentary*
+
 
 # (10 points) Consider a Random Effects Model 
 
