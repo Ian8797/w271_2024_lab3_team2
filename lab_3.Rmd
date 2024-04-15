@@ -41,6 +41,10 @@ if(!"tseries"%in%rownames(installed.packages())) {install.packages("tseries")}
 library(tseries)
 if(!"feasts"%in%rownames(installed.packages())) {install.packages("feasts")} 
 library(feasts)
+if(!"scales"%in%rownames(installed.packages())) {install.packages("scales")} 
+library(scales)
+if(!"lmtest"%in%rownames(installed.packages())) {install.packages("lmtest")} 
+library(lmtest)
 ```
 
 # U.S. traffic fatalities: 1980-2004
@@ -290,6 +294,13 @@ data |>
 ```
 We see that fatality rate appear to have been trending down in most state over time, with some being more flat.
 
+```{r numeric vars}
+summary(data$perc14_24)
+summary(data$unemployment_rate)
+summary(data$vehicmilespc)
+```
+The scale of vehicle miles driven per capita is far larger than the percentage and rate variables. 
+
 # (15 points) Preliminary Model
 
 Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
@@ -309,8 +320,17 @@ summary(prelim_lm)
 
 std_residuals <- rstandard(prelim_lm)
 
+# second option using binary year variables 
+data[year_vars] <- lapply(data[year_vars], factor)
+year_vars_minus_one <- year_vars[2:length(year_vars)]
 
+fn_pm <- as.formula(paste('total_fatalities_rate ~', paste(year_vars_minus_one, collapse='+')))
+mod_pm <- lm(fn_pm, data=data)
+
+summary(mod_pm)
 ```
+
+
 Fitting a linear model is a good place to start given its simplicity and comprehension to give first insights into the data. It also may immediately signal if ignoring cross sectional units has detrimentally effected the model. Here the model explains that year has a negative relationship with total fatality rate. Additionally, that establishing legality levels of BAC have negative effects on fatality rates as well. 
 
 Driving did become safer over time as the trend in years clearly shows, but the BAC legality had a strong influence as well. At the beginning of the time period many states had no BAC limit, but as regulations changed thresholds were established. The model indicates these thresholds helped in the decrease in fatality rates.
@@ -343,6 +363,22 @@ If it is appropriate, include transformations of these variables. Please careful
 expand_lm <- lm(total_fatalities_rate ~ year_of_observation + graduated_drivers_license_law + bac10 + bac08 + primary_seatbelt_law + secondary_seatbelt_law + perse + unemployment_rate + perc14_24 + sl70plus + vehicmiles, data=data)
 
 summary(expand_lm)
+
+# second option using binary year variables and add scaling 
+data$perc14_24 <- rescale(data$perc14_24)
+data$unemployment_rate <- rescale(data$unemployment_rate)
+data$vehicmilespc<- rescale(data$vehicmilespc)
+
+cat_vars <- c("bac10", "bac08", "perse", "primary_seatbelt_law", "secondary_seatbelt_law", "sl70plus", "graduated_drivers_license_law") 
+data[cat_vars] <- lapply(data[cat_vars], factor)
+
+num_vars <- c("perc14_24", "unemployment_rate", "vehicmilespc")
+combined_vars <- c(year_vars_minus_one, cat_vars, num_vars)
+
+fn_exp <- as.formula(paste('total_fatalities_rate ~', paste(combined_vars, collapse='+')))
+mod_exp <- lm(fn_exp, data=data)
+
+summary(mod_exp)
 ```
 
 Primary seat belt laws and Secondary seat belt laws are rounded to represent a Boolean flag and from our chart above should be considered separately due to the different levels of fatality rates. Graduated driver license and Per se laws were simlarly rounded to eliminate any data that may have not been a Boolean. Speed limit faster than 70 mph was kept as the original Boolean due to the EDA indicating a slight difference in the fatality rates associated. Unemployment Rate, Vehicle miles driven per capita, Percent of the population between 14 and 24 years old are also unaltered due to them being continuous variables. 
@@ -363,18 +399,16 @@ Which set of estimates do you think is more reliable? Why do you think this?
 - Are these assumptions reasonable in the current context?
 
 ```{r fixed effects model}
-year_vars_minus_one <- year_vars[2:length(year_vars)]
-expanded_vars <- c("bac10", "bac08", "perse", "primary_seatbelt_law", "secondary_seatbelt_law", "sl70plus", "graduated_drivers_license_law", "perc14_24", "unemployment_rate", "vehicmilespc")
-combined_vars <- c(year_vars_minus_one, expanded_vars)
-
-fn <- as.formula(paste('total_fatalities_rate ~', paste(combined_vars, collapse='+')))
-
-fe_mod <- plm(fn, index="state", data=data, model="within")
-summary(fe_mod)
+mod_fe <- plm(fn_exp, index="state", data=data, model="within")
+summary(mod_fe)
 ```
+The blood alcohol variables (`bac08` and `bac10`) both remain statistically significant in the fixed effects model at the state level. The coefficient for `bac08` dropped slightly from -2.19 to -1.18 and the coefficient for `bac10` also dropped from -1.24 to -0.87. The coefficients for the blood alcohol variables are negative and significant in both models. The interpretation is that when the bac08 law is in effect the traffic fatality rate is reduced by 1.18, whereas when the bac10 law is in effect the traffic fatality rate is only reduced by 0.87. This practically makes sense as we would expect a lower blood alcohol level to reduce the fatality rate. By controlling for any inherent fixed characteristics that vary across states, we that the magnitude of the effect of bac laws on fatality decreases, suggesting that there is a decent amount of variation in the characteristics from state to state. 
 
-*Need to add commentary*
+The statistical significance associated with `perse` increases in the fixed effects model and the coefficient increases in magnitude from -0.65 to -1.06, indicating that when the perse laws are in effect, controlling for fixed effects across states, the laws appear to be more effective at reducing the fatality rate.
 
+The `primary_seatbelt_law` variable becomes significant in the fixed effects model. The coefficient also changes from -0.09 to -1.25 suggesting that when controlling for state level fixed effects, primary seat belt laws do reduce the traffic fatality rate. 
+
+The fixed effects model produces a more reliable set of estimates because it relaxes the assumption of iid across data points. In the linear extended model, the assumption is that the data are iid, however due to the panel structure we know that there is dependency among observations. The fixed effects model accounts for this dependency by identifying that the data is linked by state. This model assumes that the data are iid within panels i.e., at the state level. This assumption is more reasonable than ignoring the panel structure of the data. It is reasonable to believe that there are fixed characteristics that vary across states i.e., no two states are identical. 
 
 # (10 points) Consider a Random Effects Model 
 
@@ -383,13 +417,14 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
-  In this case, a random effects model assumes the state specific effects are uncorrelated with all the predictors in the model, which means there is no omitted variable bias from omitting fixed effects. We think this is a very strong assumption that are not met in our data. If we were to inappropriately estimate a random effects model, the coefficient estimates and standard error estimates will be biased, and will not be consistent. Only fixed effect model is the solely consistent model for this case.
+
+In this case, a random effects model assumes the state specific effects are uncorrelated with all the predictors in the model, which means there is no omitted variable bias from omitting fixed effects. We think this is a very strong assumption that are not met in our data. If we were to inappropriately estimate a random effects model, the coefficient estimates and standard error estimates will be biased, and will not be consistent. Only fixed effect model is the solely consistent model for this case.
   
 # (10 points) Model Forecasts 
 
 The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
 
-```{r}
+```{r get data}
 fredr_set_key("0ba6b0a40845d6abcf6b761a190609c7")
 driving.df <- fredr(
   series_id = "M12MTVUSM227NFWA",
@@ -413,8 +448,7 @@ driving.change.ts <- post_2018 |>
   as_tsibble(index = time_index)
 ```
 
-
-```{r}
+```{r data visuals}
 driving.change.ts |>
   gg_subseries(pct_change) +
   labs(y = "Percentage Change from 2018 Total Driving", x = "Month",
