@@ -43,8 +43,8 @@ if(!"feasts"%in%rownames(installed.packages())) {install.packages("feasts")}
 library(feasts)
 if(!"scales"%in%rownames(installed.packages())) {install.packages("scales")} 
 library(scales)
-if(!"lmtest"%in%rownames(installed.packages())) {install.packages("lmtest")} 
-library(lmtest)
+if(!"sanwhich"%in%rownames(installed.packages())) {install.packages("sanwhich")} 
+library(sanwhich)
 ```
 
 # U.S. traffic fatalities: 1980-2004
@@ -459,18 +459,45 @@ driving.change.ts |> filter(pct_change == min(pct_change))
 
 - Comparing monthly miles driven in 2018 to the same months during the pandemic: 
   - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
-    During the pandemic, February 2021 was the month that had experienced largest decrease in driving when compared to Feb 2018 with -11.95% decrease.
+    
+During the pandemic, February 2021 was the month that had experienced largest decrease in driving when compared to Feb 2018 with -11.95% decrease.
+    
   - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
-    During the pandemic, February 2020 was the month that had experienced largest increase in driving when compared to Feb 2018 with 2.11% increase.
+    
+During the pandemic, February 2020 was the month that had experienced largest increase in driving when compared to Feb 2018 with 2.11% increase.
   
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
 Based on FE estimates, one unit change of miles driven per capita will have about 0.01% impact on the number of traffic fatalities. Therefore, about 2% increase in driving during February 2020 will estimate to have 0.0002% increase on the number of traffic fatalities.
 
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
 Based on FE estimates, one unit change of miles driven per capita will have about 0.01% impact on the number of traffic fatalities. Therefore, about 12% decrease in driving during February 2021 will estimate to have 0.0012% decrease on the number of traffic fatalities.
 
 # (5 points) Evaluate Error 
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
+
+```{r serial correlation}
+# Breusch-Godfrey serial correlation 
+pbgtest(mod_fe)
+
+# breush pagan test for heteroskedasticty 
+pcdtest(mod_fe)
+```
+
+```{r errors plot}
+data.frame("resid"=resid(mod_fe),"fitted"=predict(mod_fe)) %>%
+ggplot(aes(fitted,resid)) +
+geom_point(alpha=0.4,color="cornflowerblue") +
+geom_smooth(method="gam",color="coral") +
+theme_economist_white(gray_bg=F) +
+theme(legend.position="none") +
+xlab("Fitted") +
+ylab("Residuals")
+```
+
+If serial correlation or heteroskedasticity were present in the idiosyncratic errors of the model, the significance levels of the regression coefficients would be overestimated which results in a biased model. The Breusch-Godfrey test provides evidence to reject the null hypothesis of no serial correlation due to the small p-value, therefore serial correlation is present. The Breush-Pagan test provides evidence to not reject the null hypothesis of cross-sectional dependence. Therefore, heteroskedasticity is present in our data. This result is also supported by the residual plot which shows dispersion of the residuals as the fitted value increases, implying un-equal variance. 
+
