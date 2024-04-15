@@ -43,8 +43,8 @@ if(!"feasts"%in%rownames(installed.packages())) {install.packages("feasts")}
 library(feasts)
 if(!"scales"%in%rownames(installed.packages())) {install.packages("scales")} 
 library(scales)
-if(!"sanwhich"%in%rownames(installed.packages())) {install.packages("sanwhich")} 
-library(sanwhich)
+if(!"sandwich"%in%rownames(installed.packages())) {install.packages("sandwich")} 
+library(sandwich)
 ```
 
 # U.S. traffic fatalities: 1980-2004
@@ -96,8 +96,8 @@ data$speed_limit <- with(data,
 year_vars <- grep("^d\\d{2}$", names(data), value = TRUE)
 data$year_of_observation <- apply(data[, year_vars], 1, function(x) 1980 + which(x == 1) - 1)
 
-#data <- data[, !(names(data) %in% c(year_vars, "sl55", "sl65", "sl70", "sl75", "slnone"))]
-data <- data[, !(names(data) %in% c("sl55", "sl65", "sl70", "sl75", "slnone"))]
+data <- data[, !(names(data) %in% c(year_vars, "sl55", "sl65", "sl70", "sl75", "slnone"))]
+#data <- data[, !(names(data) %in% c("sl55", "sl65", "sl70", "sl75", "slnone"))]
 
 #make sure they are indicating 0 and 1 respectively 
 data$bac10 <- round(data$bac10)
@@ -184,11 +184,7 @@ data$state[data$state == 48] <- 'wa'
 data$state[data$state == 49] <- 'wv'
 data$state[data$state == 50] <- 'wi'
 data$state[data$state == 51] <- 'wy'
-
-
-
 ```
-
 
 The traffic fatalities data originates from the Fatality Analysis Reporting System (FARS), managed by the National Highway Traffic Safety Administration (NHTSA). This system gathers data on every traffic crash across the 48 contiguous United States that results in the death of a vehicle occupant or a nonmotorist. The data collection process, conducted by state employees, employs a standardized format to ensure consistency and comparability across different states.
 
@@ -197,7 +193,6 @@ The dependent variable of interest, total_fatalities_rate, is defined as the num
 The independent variables include indicator variables for control legislation, including blood alcohol limit, graduated drivers license law, seat belt, and speed limit laws. Other controls include continuous variables for mileage traveled and demographic characteristics.
 
 This dataset represents a census of traffic fatalities, rather than a sample. It documents every recorded instance of traffic-related fatalities within its scope and time frame, making it a complete record for the study period and not a subset of the total incidents. 
-
 
 ```{r}
 average_fatalities_per_year <- aggregate(total_fatalities_rate ~ year_of_observation, data, mean)
@@ -298,6 +293,7 @@ We see that fatality rate appear to have been trending down in most state over t
 summary(data$perc14_24)
 summary(data$unemployment_rate)
 summary(data$vehicmilespc)
+data$year_of_observation <- as.factor(data$year_of_observation)
 ```
 The scale of vehicle miles driven per capita is far larger than the percentage and rate variables. 
 
@@ -321,15 +317,10 @@ summary(prelim_lm)
 std_residuals <- rstandard(prelim_lm)
 
 # second option using binary year variables 
-data[year_vars] <- lapply(data[year_vars], factor)
-year_vars_minus_one <- year_vars[2:length(year_vars)]
-
-fn_pm <- as.formula(paste('total_fatalities_rate ~', paste(year_vars_minus_one, collapse='+')))
-mod_pm <- lm(fn_pm, data=data)
+mod_pm <- lm(total_fatalities_rate ~ year_of_observation, data=data)
 
 summary(mod_pm)
 ```
-
 
 Fitting a linear model is a good place to start given its simplicity and comprehension to give first insights into the data. It also may immediately signal if ignoring cross sectional units has detrimentally effected the model. Here the model explains that year has a negative relationship with total fatality rate. Additionally, that establishing legality levels of BAC have negative effects on fatality rates as well. 
 
@@ -373,9 +364,9 @@ cat_vars <- c("bac10", "bac08", "perse", "primary_seatbelt_law", "secondary_seat
 data[cat_vars] <- lapply(data[cat_vars], factor)
 
 num_vars <- c("perc14_24", "unemployment_rate", "vehicmilespc")
-combined_vars <- c(year_vars_minus_one, cat_vars, num_vars)
+combined_vars <- c(cat_vars, num_vars)
 
-fn_exp <- as.formula(paste('total_fatalities_rate ~', paste(combined_vars, collapse='+')))
+fn_exp <- as.formula(paste('total_fatalities_rate ~ year_of_observation +', paste(combined_vars, collapse='+')))
 mod_exp <- lm(fn_exp, data=data)
 
 summary(mod_exp)
