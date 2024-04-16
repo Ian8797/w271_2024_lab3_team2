@@ -310,25 +310,17 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 
 ```{r Preliminary Model}
 
-prelim_lm <- lm(total_fatalities_rate ~ year_of_observation + bac10 + bac08, data=data)
-
-summary(prelim_lm)
-
-std_residuals <- rstandard(prelim_lm)
-
-# second option using binary year variables 
 mod_pm <- lm(total_fatalities_rate ~ year_of_observation, data=data)
 
 summary(mod_pm)
 ```
 
-Fitting a linear model is a good place to start given its simplicity and comprehension to give first insights into the data. It also may immediately signal if ignoring cross sectional units has detrimentally effected the model. Here the model explains that year has a negative relationship with total fatality rate. Additionally, that establishing legality levels of BAC have negative effects on fatality rates as well. 
+Fitting a linear model is a good place to start given its simplicity and comprehension to illuminate first insights into the data. It may also signal if ignoring cross sectional units has detrimentally effected the model. Here the model explains that in general as the year increases the total fatality rate falls. This gives evidence that driving did in fact become safer overtime as the fatality rate was much lower in 2004 opposed to 1980.
 
-Driving did become safer over time as the trend in years clearly shows, but the BAC legality had a strong influence as well. At the beginning of the time period many states had no BAC limit, but as regulations changed thresholds were established. The model indicates these thresholds helped in the decrease in fatality rates.
+This model however has considerable limitations due to its lack of independent observations, omitted variable bias and the accompanying ignorance to unobserved heterogeneity for these omitted variables. Omitted variables such as different policy measures and state are thus potentially problematic to not include and would be a leading cause to biased parameter estimations. Additionally, the presence of heteroskedasticity signals potential bias and unreliability in uncertainty estimates.
 
-The limitations of this model are that the different policy journeys of each state are mixed together in a potentially problematic way that fails to respect the true timing of state decisions to adjust policy and make driving safer. 
+Taking the data structure for granted and applying a simple pooled regression while convenient can thus obscure the correct conclusions to be drawn from this panel data set.
 
-Additionally states could have started at very distinct levels of driving fatality rates that are obscured when data is pooled together. This is a leading reason that parameter estimates are not reliable and unbiased. The omitted variable of state not being considered leads to this. The influence of heteroscedasticity also gives evidence that the uncertainty estimates are not reliable and biased due to the data structure problems previously mentioned.
 
 # (15 points) Expanded Model 
 
@@ -351,10 +343,6 @@ If it is appropriate, include transformations of these variables. Please careful
 - Does having a primary seat belt law? 
 
 ```{r Expanded Model}
-expand_lm <- lm(total_fatalities_rate ~ year_of_observation + graduated_drivers_license_law + bac10 + bac08 + primary_seatbelt_law + secondary_seatbelt_law + perse + unemployment_rate + perc14_24 + sl70plus + vehicmiles, data=data)
-
-summary(expand_lm)
-
 # second option using binary year variables and add scaling 
 data$perc14_24 <- rescale(data$perc14_24)
 data$unemployment_rate <- rescale(data$unemployment_rate)
@@ -372,9 +360,9 @@ mod_exp <- lm(fn_exp, data=data)
 summary(mod_exp)
 ```
 
-Primary seat belt laws and Secondary seat belt laws are rounded to represent a Boolean flag and from our chart above should be considered separately due to the different levels of fatality rates. Graduated driver license and Per se laws were simlarly rounded to eliminate any data that may have not been a Boolean. Speed limit faster than 70 mph was kept as the original Boolean due to the EDA indicating a slight difference in the fatality rates associated. Unemployment Rate, Vehicle miles driven per capita, Percent of the population between 14 and 24 years old are also unaltered due to them being continuous variables. 
+Primary seat belt laws and Secondary seat belt laws are rounded to represent a factor and from our chart above should be considered separately due to the different levels of fatality rates. Graduated driver license and Per se laws were simlarly rounded to eliminate any data that may have not been in factor form. Speed limit faster than 70 mph was kept as the original Boolean due to the EDA indicating a slight difference in the fatality rates associated. Unemployment Rate, Vehicle miles driven per capita, Percent of the population between 14 and 24 years old are rescaled to the [0,1] range to improve interpretability and mitigate the effect of a large numerical variable from biasing results.  
 
-For Blood Alcohol levels the BAC 10% and BAC 8% law columns are considered separately to help us evaluate the relative impact in the model. The coefficient values are nearly identical at roughly -1.3. Meaning that the presence of a BAC law lowers fatalities by -1.2 per 100,000 people. Per Se laws have a slightly positive effect on fatalities however the coefficient is not significant and will be removed from the model. Having a primary seatbelt law has a significant and postive impact on fatalities showing the clearest evidence that a pooled linear model is not the appropriate approach to model the trends of the this panel data.
+For Blood Alcohol levels the BAC 10% and BAC 8% law columns are considered separately to help us evaluate the relative impact in the model with the base case being without any legal restrictions on BAC level. The coefficient values stand at -1.2 and -2.2 respectfully and are both highly significant. Meaning that the presence of BAC laws lower fatalities by 1.2 to 2.2 per 100,000 people where stricter regulations are correlated with less fatalities. Per Se laws also seem to lower fatalities at a lower rate of 0.6 per 100,000 people, however the coefficient is not as significant, but does fall below the 0.05 p-value. Surprisingly, the presence of a primary seat belt law yields a marginally negative and non-significant parameter estimate. This finding raises questions regarding the validity of employing a pooled regression model for the dataset, given the widely acknowledged role of seat belts in saving lives during emergencies.
 
 # (15 points) State-Level Fixed Effects 
 
