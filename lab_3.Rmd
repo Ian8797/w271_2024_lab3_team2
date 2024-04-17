@@ -398,6 +398,15 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
 In this case, a random effects model assumes the state specific effects are uncorrelated with all the predictors in the model, which means there is no omitted variable bias from omitting fixed effects. We think this is a very strong assumption that are not met in our data. If we were to inappropriately estimate a random effects model, the coefficient estimates and standard error estimates will be biased, and will not be consistent. Only fixed effect model is the solely consistent model for this case.
+
+```{r}
+mod_re <- plm(fn_exp, index="state", data=data, model="random")
+summary(mod_re)
+```
+
+```{r}
+phtest(mod_fe, mod_re)
+```
   
 # (10 points) Model Forecasts 
 
@@ -449,11 +458,11 @@ Now, use these changes in driving to make forecasts from your models.
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-Based on FE estimates, one unit change of miles driven per capita will have about 0.01% impact on the number of traffic fatalities. Therefore, about 2% increase in driving during February 2020 will estimate to have 0.0002% increase on the number of traffic fatalities.
+Based on FE estimates, one unit change of miles driven per capita will have about 13 times impact on the number of traffic fatalities. Therefore, about 2% increase in driving during February 2020 will estimate to have 26% increase on the number of traffic fatalities.
 
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-Based on FE estimates, one unit change of miles driven per capita will have about 0.01% impact on the number of traffic fatalities. Therefore, about 12% decrease in driving during February 2021 will estimate to have 0.0012% decrease on the number of traffic fatalities.
+Based on FE estimates, one unit change of miles driven per capita will have about 13 times impact on the number of traffic fatalities. Therefore, about 12% decrease in driving during February 2021 will estimate to have 156% decrease on the number of traffic fatalities.
 
 # (5 points) Evaluate Error 
 
