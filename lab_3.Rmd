@@ -407,7 +407,8 @@ summary(mod_re)
 ```{r}
 phtest(mod_fe, mod_re)
 ```
-  
+Very small p-value, significantly less than 5%, suggesting we should reject the null hypothesis that random effects model is appropriate.
+
 # (10 points) Model Forecasts 
 
 The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
