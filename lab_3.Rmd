@@ -61,9 +61,10 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 load(file="./data/driving.RData")
 
 ## please comment these calls in your work 
-head(data)
-desc
+#head(data)
+#desc
 ```
+
 # (30 points, total) Build and Describe the Data 
 
 1. (5 points) Load the data and produce useful features. Specifically: 
@@ -78,10 +79,6 @@ desc
     - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
-
-```{r}
-#head(data)
-```
 
 ```{r Load the data and produce useful features}
 #speed limit 
@@ -186,13 +183,13 @@ data$state[data$state == 50] <- 'wi'
 data$state[data$state == 51] <- 'wy'
 ```
 
-The traffic fatalities data originates from the Fatality Analysis Reporting System (FARS), managed by the National Highway Traffic Safety Administration (NHTSA). This system gathers data on every traffic crash across the 48 contiguous United States that results in the death of a vehicle occupant or a nonmotorist. The data collection process, conducted by state employees, employs a standardized format to ensure consistency and comparability across different states.
+The traffic fatalities data originates from the Fatality Analysis Reporting System (FARS), managed by the National Highway Traffic Safety Administration (NHTSA). This system gathers data on every traffic crash across the 48 contiguous United States that results in the death of a vehicle occupant or a non-motorist. The data collection process, conducted by state employees, employs a standardized format to ensure consistency and comparability across different states.
 
-The dependent variable of interest, total_fatalities_rate, is defined as the number of traffic fatalities per 100,000 population at the state level over over the years 1980-2004. The dataset consists of approximately 1200 records, reflecting 48 records for each of the 25 years covered.
+The dependent variable of interest, total_fatalities_rate, is defined as the number of traffic fatalities per 100,000 population at the state level over the years 1980-2004. The dataset consists of approximately 1200 records, reflecting 48 records for each of the 25 years covered.
 
 The independent variables include indicator variables for control legislation, including blood alcohol limit, graduated drivers license law, seat belt, and speed limit laws. Other controls include continuous variables for mileage traveled and demographic characteristics.
 
-This dataset represents a census of traffic fatalities, rather than a sample. It documents every recorded instance of traffic-related fatalities within its scope and time frame, making it a complete record for the study period and not a subset of the total incidents. 
+This dataset represents a census of traffic fatalities, rather than a sample. It documents every recorded instance of traffic-related fatalities within its scope and time frame, making it a complete record for the study period and not a subset. 
 
 ```{r}
 average_fatalities_per_year <- aggregate(total_fatalities_rate ~ year_of_observation, data, mean)
@@ -238,8 +235,7 @@ p2_bar <- ggplot(data, aes(x=factor(sl70plus), y=total_fatalities_rate, fill=fac
   scale_fill_discrete(labels=c("0"="Less than 70 MPH", "1"="Over 70 MPH"))
 p1_bar | p2_bar
 ```
-
-The seat belt law graph shows that regions with no seatbelt law (0) have the highest average fatality rate, while those with a primary enforcement law (1) show a lower rate, and secondary enforcement (2) has the lowest. This indicates that stricter seatbelt laws could be associated with reduced fatalities. The speed limit graph shows that when the speed limit is over 70 the average total fatalities rate is a bit higher, but interestingly not by much. 
+The seat belt law graph shows that regions with no seat belt law have the highest average fatality rate, while those with a primary enforcement law have the lowest average fatality rate. This indicates that stricter seat belt laws could be associated with reduced fatalities. The speed limit graph shows that when the speed limit is over 70 the average total fatalities rate is a bit higher. 
 
 ```{r, fig.width = 10,fig.height=4}
 p1_box <- ggplot(data, aes(x=factor(graduated_drivers_license_law), y=total_fatalities_rate)) +
