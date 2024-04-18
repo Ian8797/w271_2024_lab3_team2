@@ -356,7 +356,7 @@ mod_exp <- lm(fn_exp, data=data)
 summary(mod_exp)
 ```
 
-Primary seat belt laws and Secondary seat belt laws are rounded to represent a factor and from our chart above should be considered separately due to the different levels of fatality rates. Graduated driver license and Per se laws were simlarly rounded to eliminate any data that may have not been in factor form. Speed limit faster than 70 mph was kept as the original Boolean due to the EDA indicating a slight difference in the fatality rates associated. Unemployment Rate, Vehicle miles driven per capita, Percent of the population between 14 and 24 years old are rescaled to the [0,1] range to improve interpretability and mitigate the effect of a large numerical variable from biasing results.  
+Primary seat belt laws and Secondary seat belt laws are rounded to represent a factor and from our chart above should be considered separately due to the different levels of fatality rates. Graduated driver license and Per se laws were simlarly rounded to eliminate any data that may have not been in factor form. Speed limit faster than 70 mph was rounded as well to be a proper Boolean. Unemployment Rate, Vehicle miles driven per capita, Percent of the population between 14 and 24 years old are rescaled to the [0,1] range to improve interpretability and mitigate the effect of a large numerical variable from biasing results.  
 
 For Blood Alcohol levels the BAC 10% and BAC 8% law columns are considered separately to help us evaluate the relative impact in the model with the base case being without any legal restrictions on BAC level. The coefficient values stand at -1.2 and -2.2 respectfully and are both highly significant. Meaning that the presence of BAC laws lower fatalities by 1.2 to 2.2 per 100,000 people where stricter regulations are correlated with less fatalities. Per Se laws also seem to lower fatalities at a lower rate of 0.6 per 100,000 people, however the coefficient is not as significant, but does fall below the 0.05 p-value. Surprisingly, the presence of a primary seat belt law yields a marginally negative and non-significant parameter estimate. This finding raises questions regarding the validity of employing a pooled regression model for the dataset, given the widely acknowledged role of seat belts in saving lives during emergencies.
 
@@ -397,13 +397,13 @@ In this case, a random effects model assumes the state specific effects are unco
 
 ```{r}
 mod_re <- plm(fn_exp, index="state", data=data, model="random")
-summary(mod_re)
+#summary(mod_re)
 ```
 
 ```{r}
 phtest(mod_fe, mod_re)
 ```
-Very small p-value, significantly less than 5%, suggesting we should reject the null hypothesis that random effects model is appropriate.
+Very small p-value, significantly less than 5%, suggesting we should reject the null hypothesis that random effects model is appropriate. This confirms our original evaluation against a random effects model. 
 
 # (10 points) Model Forecasts 
 
@@ -455,11 +455,11 @@ Now, use these changes in driving to make forecasts from your models.
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-Based on FE estimates, one unit change of miles driven per capita will have about 13 times impact on the number of traffic fatalities. Therefore, about 2% increase in driving during February 2020 will estimate to have 26% increase on the number of traffic fatalities.
+Based on FE estimates, one unit change of the rescaled miles driven per capita will increase the number of traffic fatalities by 13 per 100,000 population. Therefore, about 2% increase in driving during February 2020 will estimate to have 26% increase on the number of traffic fatalities.
 
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-Based on FE estimates, one unit change of miles driven per capita will have about 13 times impact on the number of traffic fatalities. Therefore, about 12% decrease in driving during February 2021 will estimate to have 156% decrease on the number of traffic fatalities.
+Based on FE estimates, one unit change of the rescaled miles driven per capita will increase the number of traffic fatalities by 13 per 100,000 population. Therefore, about 12% decrease in driving during February 2021 will estimate to have 156% decrease on the number of traffic fatalities.
 
 # (5 points) Evaluate Error 
 
