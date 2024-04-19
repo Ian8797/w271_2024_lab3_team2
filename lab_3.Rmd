@@ -220,7 +220,8 @@ This table suggests that as the minimum legal drinking age increases, the averag
 
 p1_bar <- ggplot(data, aes(x=factor(seatbelt), y=total_fatalities_rate, fill=factor(seatbelt))) +
   geom_bar(stat="summary", fun=mean) +
-  labs(title="Average Total Fatalities by Seat Belt Law",x="Seatbelt Law", y="Average Total Fatalities Rate", fill="Seatbelt Law") + 
+  labs(title="Average Total Fatalities by Seat Belt Law",
+       x="Seatbelt Law", y="Average Total Fatalities Rate", fill="Seatbelt Law") + 
   theme_minimal() +
   scale_fill_brewer(palette="Set1", labels=c("No Law", "Primary Law", "Secondary Law")) +
   scale_x_discrete(labels=c("No Law", "Primary Law", "Secondary Law")) 
@@ -228,7 +229,8 @@ p1_bar <- ggplot(data, aes(x=factor(seatbelt), y=total_fatalities_rate, fill=fac
 
 p2_bar <- ggplot(data, aes(x=factor(sl70plus), y=total_fatalities_rate, fill=factor(sl70plus))) +
   geom_bar(stat="summary", fun=mean) +
-  labs(title="Average Total Fatalities by Speed Limit", x="Speed Limit (MPH)", y="Average Total Fatalities Rate", fill="Speed Limit") +
+  labs(title="Average Total Fatalities by Speed Limit",
+       x="Speed Limit (MPH)", y="Average Total Fatalities Rate", fill="Speed Limit") +
   theme_minimal() +
   scale_fill_brewer(palette="Set2",labels=c("0"="Less than 70 MPH", "1"="Over 70 MPH")) +
   scale_x_discrete(labels=c("0"="Less than 70 MPH", "1"="Over 70 MPH")) +
@@ -339,18 +341,22 @@ If it is appropriate, include transformations of these variables. Please careful
 - Does having a primary seat belt law? 
 
 ```{r Expanded Model}
-# second option using binary year variables and add scaling 
-data$perc14_24 <- rescale(data$perc14_24)
-data$unemployment_rate <- rescale(data$unemployment_rate)
-data$vehicmilespc<- rescale(data$vehicmilespc)
 
-cat_vars <- c("bac10", "bac08", "perse", "primary_seatbelt_law", "secondary_seatbelt_law", "sl70plus", "graduated_drivers_license_law") 
+# second option using binary year variables and add scaling 
+
+#data$perc14_24 <- rescale(data$perc14_24)
+#data$unemployment_rate <- rescale(data$unemployment_rate)
+#data$vehicmilespc<- rescale(data$vehicmilespc)
+
+cat_vars <- c("bac10", "bac08", "perse", "primary_seatbelt_law", 
+              "secondary_seatbelt_law", "sl70plus", "graduated_drivers_license_law") 
 data[cat_vars] <- lapply(data[cat_vars], factor)
 
 num_vars <- c("perc14_24", "unemployment_rate", "vehicmilespc")
 combined_vars <- c(cat_vars, num_vars)
 
-fn_exp <- as.formula(paste('total_fatalities_rate ~ year_of_observation +', paste(combined_vars, collapse='+')))
+fn_exp <- as.formula(paste('total_fatalities_rate ~ year_of_observation +', 
+                           paste(combined_vars, collapse='+')))
 mod_exp <- lm(fn_exp, data=data)
 
 summary(mod_exp)
@@ -376,6 +382,7 @@ Which set of estimates do you think is more reliable? Why do you think this?
 ```{r fixed effects model}
 mod_fe <- plm(fn_exp, index="state", data=data, model="within")
 summary(mod_fe)
+
 ```
 The blood alcohol variables (`bac08` and `bac10`) both remain statistically significant in the fixed effects model at the state level. The coefficient for `bac08` dropped slightly from -2.19 to -1.18 and the coefficient for `bac10` also dropped from -1.24 to -0.87. The coefficients for the blood alcohol variables are negative and significant in both models. The interpretation is that when the bac08 law is in effect the traffic fatality rate is reduced by 1.18, whereas when the bac10 law is in effect the traffic fatality rate is only reduced by 0.87. This practically makes sense as we would expect a lower blood alcohol level to reduce the fatality rate. By controlling for any inherent fixed characteristics that vary across states, we that the magnitude of the effect of bac laws on fatality decreases, suggesting that there is a decent amount of variation in the characteristics from state to state. 
 
@@ -409,7 +416,8 @@ Very small p-value, significantly less than 5%, suggesting we should reject the 
 
 The COVID-19 pandemic dramatically changed patterns of driving. Find data (and include this data in your analysis, here) that includes some measure of vehicle miles driven in the US. Your data should at least cover the period from January 2018 to as current as possible. With this data, produce the following statements: 
 
-```{r get data}
+``` {r get data}
+
 fredr_set_key("0ba6b0a40845d6abcf6b761a190609c7")
 driving.df <- fredr(
   series_id = "M12MTVUSM227NFWA",
@@ -418,48 +426,79 @@ driving.df <- fredr(
   mutate(year = year(date)) |>
   mutate(month = month(date)) |>
   mutate(time_index = yearmonth(date)) |>
+  mutate(value = value*1000000) |>
   select(c(time_index, year, month, value))
+
+fredr_set_key("0ba6b0a40845d6abcf6b761a190609c7")
+population.df <- fredr(
+  series_id = "POPTHM",
+  observation_start = as.Date("2018-01-01")
+) |> 
+  mutate(year = year(date)) |>
+  mutate(month = month(date)) |>
+  mutate(time_index = yearmonth(date)) |>
+  rename(pop_index = time_index) |>
+  rename(pop = value) |>
+  mutate(pop = 1000*pop) |>
+  select(c(pop_index, pop))
+
+driving.df <- driving.df |>
+  left_join(population.df, by = c('time_index' = 'pop_index')) |>
+  mutate(vehicmilespc = value/pop) |>
+  select(c(time_index, year, month, vehicmilespc))
+
 baseline_2018_driving <- driving.df |> 
   filter(year == 2018) |> 
-  select(month, value) |>
-  rename(baseline_month = month, baseline_value = value)
+  select(month, vehicmilespc) |>
+  rename(baseline_month = month, baseline_vehicmilespc = vehicmilespc)
+
 post_2018<-driving.df |> 
   filter(year != 2018) 
+
 driving.change.ts <- post_2018 |>
   left_join(baseline_2018_driving, by = c('month' = 'baseline_month')) |>
-  mutate(change = (value-baseline_value)) |>
-  mutate(pct_change = (value-baseline_value)/baseline_value*100) |>
-  select(time_index, pct_change) |>
+  mutate(change = (vehicmilespc-baseline_vehicmilespc)) |>
+  mutate(pct_change = (vehicmilespc-baseline_vehicmilespc)/baseline_vehicmilespc*100) |>
+  select(time_index, vehicmilespc, baseline_vehicmilespc, change, pct_change) |>
   as_tsibble(index = time_index)
 ```
+
 
 ```{r data visuals}
 driving.change.ts |>
   gg_subseries(pct_change) +
-  labs(y = "Percentage Change from 2018 Total Driving", x = "Month",
-       title = "US Total Vehicle Miles Traveled/Total Population 2018-2024")
+  labs(y = "% Change from 2018 Vehicle Miles Per Capita", x = "Month",
+       title = "US 12 Month Total Vehicle Miles Traveled Per Capita 2018-2024")
 driving.change.ts |> filter(pct_change == max(pct_change))
 driving.change.ts |> filter(pct_change == min(pct_change))
+```
+
+```{r coefficient analysis}
+
+sd_increase <- sd(data$vehicmilespc)*.00092612
+
+tail(driving.change.ts)
 ```
 
 - Comparing monthly miles driven in 2018 to the same months during the pandemic: 
   - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
     
-During the pandemic, February 2021 was the month that had experienced largest decrease in driving when compared to Feb 2018 with -11.95% decrease.
+During the pandemic, Feb 2021 was the month that had experienced the largest decrease in driving when compared to Feb 2018 with -12.98%
+decrease.
     
   - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
     
-During the pandemic, February 2020 was the month that had experienced largest increase in driving when compared to Feb 2018 with 2.11% increase.
+During the pandemic, Feb 2020 was the month that had experienced largest increase in driving when compared to Feb 2018 with 1.05% increase.
   
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-Based on FE estimates, one unit change of the rescaled miles driven per capita will increase the number of traffic fatalities by 13 per 100,000 population. Therefore, about 2% increase in driving during February 2020 will estimate to have 26% increase on the number of traffic fatalities.
+Using February 2024 as a reference point, when the US vehicle miles per capita stood at 9712.464, a 1.05% increase suggests the FE model would anticipate an additional 0.089 fatalities per 100,000 population. While any rise is regrettable, the observed effect appears to be minimal in practical terms.
 
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-Based on FE estimates, one unit change of the rescaled miles driven per capita will increase the number of traffic fatalities by 13 per 100,000 population. Therefore, about 12% decrease in driving during February 2021 will estimate to have 156% decrease on the number of traffic fatalities.
+Using February 2024 as the benchmark, when US vehicle miles per capita stood at 9712.464, a 12.98% decrease implies the FE model would forecast 1.103 fewer fatalities per 100,000 population. This promising outcome indicates a reduced reliance on single occupancy vehicles, leading to fewer driving miles, could precipitate fewer fatalities in a meaningful way at this large a difference.
 
 # (5 points) Evaluate Error 
 
